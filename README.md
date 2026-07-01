@@ -45,6 +45,24 @@ func main() {
 }
 ```
 
+## NFC-e (modelo 65, varejo/consumidor)
+
+IE e CSC ficam no cadastro do emitente; no corpo vão só itens e pagamentos.
+
+```go
+cupom, err := cli.EmitirNfce(ctx, emitti.NfceInput{
+	Prestador:  emitti.Prestador{CNPJ: "12345678000190"},
+	UF:         "RS", // opcional — default: UF do emitente
+	Itens: []emitti.NfceItem{{
+		Codigo: "SKU1", Descricao: "Camiseta", NCM: "61091000",
+		CFOP: "5102", Quantidade: 1, ValorUnitario: 59.9,
+	}},
+	Pagamentos: []emitti.NfcePagamento{{Forma: "01", Valor: 59.9}}, // 01=dinheiro, 03=crédito, 17=Pix
+})
+// justificativa de 15 a 255 caracteres (regra SEFAZ)
+_, _ = cli.CancelarNfce(ctx, cupom.EmissaoID, "Cancelamento a pedido do cliente no PDV.")
+```
+
 ## Erros
 
 Respostas não-2xx voltam como `*emitti.Error` (com `Status` e `Body`):

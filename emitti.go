@@ -73,6 +73,42 @@ type NfseInput struct {
 	Servico           Servico   `json:"servico"`
 }
 
+// NfceItem é um produto da NFC-e.
+type NfceItem struct {
+	Codigo        string  `json:"codigo"`
+	Descricao     string  `json:"descricao"`
+	NCM           string  `json:"ncm"`
+	CFOP          string  `json:"cfop"`
+	Unidade       string  `json:"unidade,omitempty"`
+	Quantidade    float64 `json:"quantidade"`
+	ValorUnitario float64 `json:"valor_unitario"`
+	CSOSN         string  `json:"csosn,omitempty"` // Simples Nacional (default 102)
+	Origem        string  `json:"origem,omitempty"`
+	EAN           string  `json:"ean,omitempty"`
+}
+
+// NfcePagamento é uma forma de pagamento da NFC-e.
+type NfcePagamento struct {
+	Forma string  `json:"forma"` // tPag: 01=dinheiro, 03=crédito, 17=Pix...
+	Valor float64 `json:"valor"`
+}
+
+// NfceIde traz dados opcionais de identificação (série, natureza da operação).
+type NfceIde struct {
+	Serie            int    `json:"serie,omitempty"`
+	NaturezaOperacao string `json:"natureza_operacao,omitempty"`
+}
+
+// NfceInput é o corpo de uma emissão de NFC-e (modelo 65).
+type NfceInput struct {
+	ReferenciaExterna string          `json:"referencia_externa,omitempty"`
+	Prestador         Prestador       `json:"prestador"`
+	UF                string          `json:"uf,omitempty"` // se ausente, usa a UF do emitente
+	Ide               *NfceIde        `json:"ide,omitempty"`
+	Itens             []NfceItem      `json:"itens"`
+	Pagamentos        []NfcePagamento `json:"pagamentos"`
+}
+
 // Emissao é a resposta da API (202 com o emissao_id).
 type Emissao struct {
 	EmissaoID         string         `json:"emissao_id"`
@@ -200,6 +236,16 @@ func (c *Client) Consultar(ctx context.Context, emissaoID string) (*Emissao, err
 // Cancelar cancela uma NFS-e autorizada (assíncrono).
 func (c *Client) Cancelar(ctx context.Context, emissaoID string) (*Emissao, error) {
 	return c.doEmissao(ctx, http.MethodDelete, "/v1/nfse/"+emissaoID, nil)
+}
+
+// EmitirNfce emite uma NFC-e (modelo 65, varejo/consumidor). Assíncrono — 202 com o emissao_id.
+func (c *Client) EmitirNfce(ctx context.Context, in NfceInput, opts ...RequestOption) (*Emissao, error) {
+	return c.doEmissao(ctx, http.MethodPost, "/v1/nfce", in, opts...)
+}
+
+// CancelarNfce cancela uma NFC-e autorizada. Justificativa de 15 a 255 caracteres (regra SEFAZ).
+func (c *Client) CancelarNfce(ctx context.Context, emissaoID, justificativa string) (*Emissao, error) {
+	return c.doEmissao(ctx, http.MethodDelete, "/v1/nfce/"+emissaoID, map[string]string{"justificativa": justificativa})
 }
 
 // Substituir emite uma nova NFS-e e cancela a antiga.
