@@ -109,12 +109,17 @@ type NfceInput struct {
 	Pagamentos        []NfcePagamento `json:"pagamentos"`
 }
 
-// Emissao é a resposta da API (202 com o emissao_id).
+// Emissao é a resposta da API (202 com o emissao_id). Na emissão SÍNCRONA de NFC-e
+// (EmitirNfceSync) os campos NumeroNFSe/CodigoVerificacao/QRCode/Contingencia vêm preenchidos.
 type Emissao struct {
 	EmissaoID         string         `json:"emissao_id"`
 	Status            string         `json:"status"`
 	ReferenciaExterna string         `json:"referencia_externa,omitempty"`
 	Resultado         map[string]any `json:"resultado,omitempty"`
+	NumeroNFSe        string         `json:"numero_nfse,omitempty"` // NFC-e síncrona: chave de acesso
+	CodigoVerificacao string         `json:"codigo_verificacao,omitempty"`
+	QRCode            string         `json:"qr_code,omitempty"`
+	Contingencia      bool           `json:"contingencia,omitempty"`
 }
 
 // Error representa uma resposta não-2xx da API. Body é o JSON decodificado da
@@ -241,6 +246,12 @@ func (c *Client) Cancelar(ctx context.Context, emissaoID string) (*Emissao, erro
 // EmitirNfce emite uma NFC-e (modelo 65, varejo/consumidor). Assíncrono — 202 com o emissao_id.
 func (c *Client) EmitirNfce(ctx context.Context, in NfceInput, opts ...RequestOption) (*Emissao, error) {
 	return c.doEmissao(ctx, http.MethodPost, "/v1/nfce", in, opts...)
+}
+
+// EmitirNfceSync emite uma NFC-e de forma SÍNCRONA (PDV/baixa latência): a resposta
+// já traz chave/protocolo/QR (~1-3s), sem esperar o webhook.
+func (c *Client) EmitirNfceSync(ctx context.Context, in NfceInput, opts ...RequestOption) (*Emissao, error) {
+	return c.doEmissao(ctx, http.MethodPost, "/v1/nfce?sync=1", in, opts...)
 }
 
 // CancelarNfce cancela uma NFC-e autorizada. Justificativa de 15 a 255 caracteres (regra SEFAZ).
