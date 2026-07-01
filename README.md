@@ -59,6 +59,7 @@ cupom, err := cli.EmitirNfce(ctx, emitti.NfceInput{
 	}},
 	Pagamentos: []emitti.NfcePagamento{{Forma: "01", Valor: 59.9}}, // 01=dinheiro, 03=crédito, 17=Pix
 })
+pdf, _ := cli.BaixarPdfNfce(ctx, cupom.EmissaoID) // []byte (DANFE-NFC-e)
 // justificativa de 15 a 255 caracteres (regra SEFAZ)
 _, _ = cli.CancelarNfce(ctx, cupom.EmissaoID, "Cancelamento a pedido do cliente no PDV.")
 ```

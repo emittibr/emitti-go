@@ -273,3 +273,13 @@ func (c *Client) BaixarPDF(ctx context.Context, emissaoID string) ([]byte, error
 	defer resp.Body.Close()
 	return io.ReadAll(resp.Body)
 }
+
+// BaixarPdfNfce baixa o DANFE-NFC-e (cupom) em PDF.
+func (c *Client) BaixarPdfNfce(ctx context.Context, emissaoID string) ([]byte, error) {
+	resp, err := c.do(ctx, http.MethodGet, "/v1/nfce/"+emissaoID+"/pdf", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return io.ReadAll(resp.Body)
+}
